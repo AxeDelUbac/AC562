@@ -70,32 +70,33 @@ BFS <- function(adj_matrice, s) {
 }
 
 BFSstack <- function(adj_matrice, s) {
-  n <- nrow(adj_matrice)
-  Ds <- rep(-1, n)   # Distance à chaque nœud, initialisée à -1 (non visité)
-  Ds[s] <- 0         # Le nœud de départ a une distance de 0
-  stack <- numeric(n) # Initialisation d'une pile de taille n
-  stack[1] <- s      # Le nœud de départ est placé à la position 1
-  read <- 1
-  write <- 2
-  d <- 0
+  n <- nrow(adj_matrice)           # Nombre de nœuds dans le graphe
+  Ds <- rep(-1, n)                 # Distance à chaque nœud, initialisée à -1 (non visité)
+  Ds[s] <- 0                       # Le nœud de départ a une distance de 0
+  stack <- numeric(n)              # Initialisation d'une pile de taille n
+  stack[1] <- s                    # Le nœud de départ est placé à la position 1
+  read <- 1                        # Initialisation du pointeur de lecture
+  write <- 2                       # Initialisation du pointeur d'écriture
 
-  while(read!=write){
-    i <- stack[read] # Lire le prochain nœud dans la pile
-    read <- read + 1
-
+  # Boucle principale tant qu'il y a des nœuds à explorer dans la pile
+  while (read != write) {
+    i <- stack[read]               # Lire le prochain nœud dans la pile
+    read <- read + 1               # Incrémenter le pointeur de lecture
     # Explorer les voisins de i
     neighbors <- which(adj_matrice[i, ] == 1)
-    for (j in neighbors) {
-      if (Ds[j] == -1) { # Si le voisin n'a pas encore été visité
-        Ds[j] <- d + 1
-        stack[write] <- j # Placer le voisin dans la pile
-        write <- write + 1
+    # Si des voisins existent, les traiter
+    if (length(neighbors) > 0) {
+      for (j in neighbors) {
+        if (Ds[j] == -1) {          # Si le voisin n'a pas encore été visité
+          Ds[j] <- Ds[i] + 1        # Mettre à jour la distance du voisin
+          stack[write] <- j         # Placer le voisin dans la pile
+          write <- write + 1        # Incrémenter le pointeur d'écriture
+        }
       }
     }
-
-    # Incrémenter la distance
-    d <- d + 1
   }
+
+  # Retourner le tableau des distances
   return(Ds)
 }
 
@@ -141,7 +142,8 @@ closenessCentrality <- function(adj_matrice) {
   for (i in 1:n) {
     reachable_distances <- D[i, D[i, ] != -1]
     if (length(reachable_distances) > 1) {
-      closeness[i] <- (length(reachable_distances) - 1) / sum(reachable_distances)
+      closeness[i] <- (((length(reachable_distances) - 1) / sum(reachable_distances))/(n-1))
+
     } else {
       closeness[i] <- 0
     }
@@ -199,6 +201,8 @@ betweennessCentrality <- function(adj_matrice) {
       }
     }
   }
+  # Diviser par 2 pour corriger la duplication dans les graphes non orientés
+  betweenness <- betweenness / 2
 
   return(betweenness)
 }
