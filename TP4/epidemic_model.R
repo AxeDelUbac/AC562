@@ -112,3 +112,4 @@ print(adj_matrice)
 
 graph <- createGraph (adj_matrice)
 spread_epidemic (graph, 3 , 0.3 , 3 , 20)
+#arv

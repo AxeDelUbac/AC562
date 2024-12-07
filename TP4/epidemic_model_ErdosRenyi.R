@@ -81,3 +81,4 @@ spread_epidemic<- function (graph,n0,p,nday,t)
 
 graph <-erdos.renyi.game(200, 0.01)
 spread_epidemic (graph, 10 , 0.3 , 10 , 100)
+#bjr
