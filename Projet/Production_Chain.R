@@ -51,7 +51,7 @@ types_usines <- data.frame(
     "zinc"
   ),
   ressource_input = c(
-    "poutre_en_acier moteur_a_vapeur Arme_lourde",
+    "20:poutre_en_acier 16:moteur_a_vapeur 10:Arme_lourde",
     "acier",
     "dynamite acier",
     "fer charbon",
@@ -65,24 +65,75 @@ types_usines <- data.frame(
     "cuivre zinc",
     "void",
     "void"
+  ),
+  Nombre = c(
+    1,  # 1 Chantier_navale
+    1,  # 1 Acierie
+    1,  # 1 Usine_de_fabrication_arme_lourde
+    3,  # 3 Fourneaux
+    1,  # 1 Usine_de_dynamite
+    2,  # 1 Mine_de_charbon
+    2,  # 1 Mine_de_fer
+    1,  # 1 Carriere_de_salpetre
+    1,  # 1 Usine_de_suif
+    1,  # 1 ferme_de_cochon
+    1,  # 1 Ligne_d'assemblage_de_moteur
+    1,  # 1 Fonderie_de_laiton
+    1,  # 1 Mine_de_cuivre
+    1   # 1 Mine_de_zinc
+  ),
+  Quantite_ressource = c(
+    "20 16 10",  # Chantier_navale
+    "1",        # Acierie
+    "1 1",     # Usine_de_fabrication_arme_lourde
+    "1 1",     # Fourneau
+    "1 1",     # Usine_de_dynamite
+    "0",         # Mine_de_charbon (Pas de ressource d'entrée)
+    "0",         # Mine_de_fer
+    "0",         # Carriere_de_salpetre
+    "1",        # Usine_de_suif
+    "0",         # ferme_de_cochon
+    "1 1",     # Ligne_d'assemblage_de_moteur
+    "1 1",     # Fonderie_de_laiton
+    "0",         # Mine_de_cuivre
+    "0"          # Mine_de_zinc
   )
 )
+
+# Étendre le tableau pour générer les usines
+extended_usines <- do.call(rbind, lapply(1:nrow(types_usines), function(i) {
+  n <- types_usines$Nombre[i]
+  data.frame(
+    Type = paste0(types_usines$Type[i], "_", seq_len(n)),  # Générer des noms uniques
+    TempsDeProduction = rep(types_usines$TempsDeProduction[i], n),
+    ressource_output = rep(types_usines$ressource_output[i], n),
+    ressource_input = rep(types_usines$ressource_input[i], n),
+    stringsAsFactors = FALSE
+  )
+}))
+
+# Résultat final : Tableau étendu
+print(extended_usines)
 
 # Créer un tableau des relations
 relations <- data.frame(Source = character(), Target = character(), Resource = character(), stringsAsFactors = FALSE)
 
-for (i in 1:nrow(types_usines)) {
-  inputs <- strsplit(types_usines$ressource_input[i], " ")[[1]]
+for (i in 1:nrow(extended_usines)) {
+  inputs <- strsplit(extended_usines$ressource_input[i], " ")[[1]]
+  cat("DEBUG: Inputs for", extended_usines$Type[i], ":", inputs, "\n") # Log des inputs
+  inputs <- strsplit(extended_usines$ressource_input[i], " ")[[1]]
 
   for (input in inputs) {
     if (input != "void") {
+
       resource_name <- sub(".*:", "", input) # Si le format inclut des quantités (e.g., "60:poutre_en_acier")
-      source_usine <- types_usines$Type[types_usines$ressource_output == resource_name]
+      source_usine <- extended_usines$Type[extended_usines$ressource_output == resource_name]
+      cat("DEBUG: Source usine for", resource_name, ":", source_usine, "\n") # Log pour source_usine
       if (length(source_usine) > 0) {
-        relations <- rbind(relations, data.frame(Source = source_usine, Target = types_usines$Type[i], Resource = resource_name))
+        relations <- rbind(relations, data.frame(Source = source_usine, Target = extended_usines$Type[i], Resource = resource_name))
       }
     }
-    print(paste("Type d'usine:", types_usines$Type[i], "- Temps de production:", types_usines$TempsDeProduction[i], "Jours"))
+    print(paste("Type d'usine:", extended_usines$Type[i], "- Temps de production:", extended_usines$TempsDeProduction[i], "Jours"))
   }
 }
 
@@ -100,14 +151,17 @@ V(g)$days_in_state <- 0       # Nombre de jours dans un état non normal
 V(g)$production_timer <- 0    # Compteur pour la production
 
 # Fonction pour simuler les états
-simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 5, plot_interval = 10) {
+simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_greve = 7, t_maladie = 5, t_incident = 10, plot_interval = 10) {
   size_graph <- vcount(graph)
-  resource_output <- setNames(types_usines$ressource_output, types_usines$Type)
-  resource_input <- setNames(types_usines$ressource_input, types_usines$Type)
-  production_time <- setNames(types_usines$TempsDeProduction, types_usines$Type)
+  resource_output <- setNames(extended_usines$ressource_output, extended_usines$Type)
+  resource_input <- setNames(extended_usines$ressource_input, extended_usines$Type)
+  production_time <- setNames(extended_usines$TempsDeProduction, extended_usines$Type)
+
+   consumer_indices <- setNames(rep(1, length(unique(extended_usines$ressource_output))), unique(extended_usines$ressource_output))
 
   # Simulation sur t jours
   for (day in 1:t) {
+    cat("\n=== Jour", day, "===\n")
     new_statut <- V(graph)$statut
     new_productivity <- V(graph)$productivity
     new_days_in_state <- V(graph)$days_in_state
@@ -131,7 +185,10 @@ simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 
       } else {
         # Si l'usine est dans un état non normal, elle retourne à l'état normal après t_state jours
         new_days_in_state[i] <- new_days_in_state[i] + 1
-        if (new_days_in_state[i] >= t_state) {
+        #if (new_days_in_state[i] >= t_state) {
+        if ((new_statut[i] == "Greve" && new_days_in_state[i] >= t_greve) ||
+            (new_statut[i] == "Maladie" && new_days_in_state[i] >= t_maladie) ||
+            (new_statut[i] == "Incident" && new_days_in_state[i] >= t_incident)) {
           new_statut[i] <- "Normal"
           new_productivity[i] <- 100
           new_days_in_state[i] <- 0
@@ -147,27 +204,33 @@ simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 
         new_productivity[i] <- 0
       }
 
-      if (new_statut[i] == "Normal" && new_productivity[i] > 0) {
+      # Permettre la production même avec une productivité réduite
+      if (new_productivity[i] > 0) {
+
+        # Calculer le nombre d'unités à produire
+        units_produced <- ceiling((1 / production_time[V(graph)$name[i]]) * (new_productivity[i] / 100))
+
         inputs <- strsplit(resource_input[V(graph)$name[i]], " ")[[1]]
         if (inputs[1] != "void") {
           sufficient_stock <- all(sapply(inputs, function(r) {
-          any(sapply(neighbors(graph, i, mode = "in"), function(neighbor) {
-            resource_output[V(graph)$name[neighbor]] == r && V(graph)$stock[neighbor] > 0
+            total_available <- sum(sapply(neighbors(graph, i, mode = "in"), function(neighbor) {
+              if (resource_output[V(graph)$name[neighbor]] == r) {
+                cat("Jour", day, ": Producteur", V(graph)$name[neighbor], "- Stock disponible :", new_stock[neighbor], "\n")
+                new_stock[neighbor]
+              } else {
+                0
+              }
+            }))
+            cat("Jour", day, ": Ressource", r, "- Total disponible :", total_available, "- Besoin :", units_produced, "\n")
+            total_available >= units_produced
           }))
-        }))
 
           if (sufficient_stock) {
-            # Calculer le nombre d'unités à produire
-            units_produced <- ceiling((1 / production_time[V(graph)$name[i]]) * (new_productivity[i] / 100))
-
-            # Marquer les usines productrices déjà utilisées
-            used_producers <- vector("logical", length = vcount(graph))
-
             # Consommer les ressources en entrée
             for (r in inputs) {
               remaining_needed <- units_produced  # Quantité nécessaire de cette ressource
               for (neighbor in neighbors(graph, i, mode = "in")) {
-                if (resource_output[V(graph)$name[neighbor]] == r && remaining_needed > 0 && !used_producers[neighbor]) {
+                if (resource_output[V(graph)$name[neighbor]] == r && remaining_needed > 0) {
                   available_stock <- new_stock[neighbor]  # Stock disponible dans l'usine productrice
                   to_consume <- min(available_stock, remaining_needed)  # Consommer ce qu'on peut
                   if (to_consume > 0) {
@@ -179,12 +242,10 @@ simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 
                     new_stock[neighbor] <- new_stock[neighbor] - to_consume
                     remaining_needed <- remaining_needed - to_consume
 
-                    # Marquer cette usine comme utilisée
-                    used_producers[neighbor] <- TRUE
+                    # Arrêter la boucle si tout est consommé
+                    if (remaining_needed <= 0) break
                   }
                 }
-                # Arrêter la boucle si tout est consommé
-                if (remaining_needed <= 0) break
               }
             }
 
@@ -198,6 +259,9 @@ simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 
                   resource_output[V(graph)$name[i]], "- Nouveau stock :", new_stock[i], "\n")
               new_production_timer[i] <- 0
             }
+          }
+          else{
+            cat("Jour", day, ": Usine", V(graph)$name[i], "n'a pas assez de ressources pour produire. Besoin :",units_produced, "unités.\n")
           }
         } else {
           new_production_timer[i] <- new_production_timer[i] + 1
@@ -228,6 +292,7 @@ simulate_states <- function(graph, p_greve, p_maladie, p_incident, t, t_state = 
     # Afficher le graphe uniquement à l'intervalle défini
     if (day %% plot_interval == 0 || day == t) {
       cat("Jour", day, "- Etat des usines\n")
+      #png("output_graph.png", width = 1200, height = 800)
       plot(
         graph,
         vertex.label = paste(V(graph)$name, "\n", V(graph)$productivity, "%\n",V(graph)$stock),
@@ -248,6 +313,7 @@ if (!is_dag(g)) {
   stop("Le graphe contient des cycles. Veuillez vérifier les relations.")
 }
 
+#png("output_graph.png", width = 1200, height = 800)
 # Visualisation du graphe
 plot(
   g,
@@ -270,10 +336,9 @@ cat("Nombre d'arêtes (relations) :", ecount(g), "\n")
 # Simulation sur 100 jours avec un plot tous les 10 jours
 simulate_states(
   g,
-  p_greve = 0.06,    # Probabilité qu'une usine passe en grève
-  p_maladie = 0.03,   # Probabilité qu'une usine passe en maladie
-  p_incident = 0.01, # Probabilité qu'une usine ait un incident
-  t = 10,           # Duree Simulation
-  t_state = 5,       # Durée d'un état non normal
-  plot_interval = 1 # Afficher le graphe tous les x jours
+  p_greve = 0.00,    # Probabilité qu'une usine passe en grève
+  p_maladie = 0.00,   # Probabilité qu'une usine passe en maladie
+  p_incident = 0.00, # Probabilité qu'une usine ait un incident
+  t = 100,           # Duree Simulation
+  plot_interval = 10# Afficher le graphe tous les x jours
 )
