@@ -41,7 +41,7 @@ Vote_matrix<-function(graphG,epsilon,time){
       {
         print("fait chieeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrrrrrrr!!!!!")
       }
-      VOTEMATRIX [v,t]<-resultat
+      VOTEMATRIX[v,t]<-resultat
     }
     print (t)
   }
@@ -79,7 +79,7 @@ k<-3
 p<-0.01
 graphWattsStrogatz <- sample_smallworld(dim,n,k,p,FALSE,FALSE)
 plot(graphWattsStrogatz , vertex.size=10, vertex.color="skyblue", edge.color="gray", main="Graphe Watts-Strogatz")
-t <-seq(0,10, by = 1)
+t <-seq(0,10, by = S1)
 
 VOTEMATRIX_WATTSTROGATS<-Vote_matrix(graphErdosRenyi,epsilon,time)
 #représenter l'évolution du taux de votes pour le candidat 1:
@@ -96,4 +96,4 @@ for (x in 1:time){
 }
 x <- 1:time
 y <- nbvote2;
-plot(x, y, type = "l", col = "blue", lwd = 2, main = "Graphe Watts strogatz évolution du vote 1", xlab = "time", ylab = "votant")
+plot(x, y, type = "l", col = "blue", lwd = 2, main = "Graphe Watts strogatz evolution du vote 1", xlab = "time", ylab = "votant")
