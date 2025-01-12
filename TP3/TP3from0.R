@@ -1,7 +1,7 @@
 library(igraph)
 
 #q1
-Vote_matrix<-function(graphG,epsilon,time){
+Vote_matrix<-function(graphG,epsilon,time,type_of_init){
   nb_votant <- vcount(graphG)
   liste_degres <- degree(graphG)
   matrice_adjacence <- as_adjacency_matrix(graphG)
@@ -9,12 +9,34 @@ Vote_matrix<-function(graphG,epsilon,time){
   VOTEMATRIX <- matrix(nrow = nb_votant, ncol = time, byrow = FALSE)
   #écriturre de la première colonne de la matrice
   #les n premiers votants vote pour 0 et les autres pour 1
-  median<-nb_votant/2
-  for (k in 1:median){
-    VOTEMATRIX[k,1] <- 0
+  if (type_of_init==0){
+    median<-nb_votant/2
+    for (k in 1:median){
+      VOTEMATRIX[k,1] <- 0
+    }
+    for (k in median+1:median){
+      VOTEMATRIX[k,1] <- 1
+    }
   }
-  for (k in median+1:median){
-    VOTEMATRIX[k,1] <- 1
+  else if (type_of_init==1){
+    trois_most_connected<- matrix(0,nrow = 1, ncol = 3, byrow = FALSE)
+    degres<-degree(graphG)
+    for (node in V(graphG)) {
+      if (graphG[node]>trois_most_connected[1,1])
+      {
+        trois_most_connected[1,1]<-node
+      }
+      else if (graphG[node]>trois_most_connected[1,2])
+      {
+        trois_most_connected[1,2]<-node
+      }
+      else if (graphG[node]>trois_most_connected[1,3])
+      {
+        trois_most_connected[1,3]<-node
+      }
+    S}
+      print (trois_most_connected)
+
   }
 
   #a chaque période on réecris une colone de la matrice VOTEMATRIX
@@ -32,7 +54,7 @@ Vote_matrix<-function(graphG,epsilon,time){
       }
       p<-(1/nb_voisin)*sommeVoteVoisin
       Pvote <- (1-2*epsilon)*p+epsilon
-      if (Pvote >1)
+- +      if (Pvote >1)
       {
         print("AAAAAAAAAAAHHHHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!!")
       }
@@ -41,6 +63,7 @@ Vote_matrix<-function(graphG,epsilon,time){
       {
         print("fait chieeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrrrrrrr!!!!!")
       }
+
       VOTEMATRIX[v,t]<-resultat
     }
     print (t)
@@ -49,14 +72,14 @@ Vote_matrix<-function(graphG,epsilon,time){
 }
 
 #q2
-time <-1
+time <-2
 epsilon<-0.01
 
 n <- 100
 p <- 0.05
 graphErdosRenyi <-sample_gnp(n, p, directed = FALSE)
 plot(graphErdosRenyi , vertex.size=10, vertex.color="skyblue", edge.color="gray", main="Graphe Erdos-Renyi")
-VOTEMATRIX_ERDOSRENYI<-Vote_matrix(graphErdosRenyi,epsilon,time)
+VOTEMATRIX_ERDOSRENYI<-Vote_matrix(graphErdosRenyi,epsilon,time,0)
 #représenter l'évolution du taux de votes pour le candidat 1:
 nbvote1<-matrix(0,nrow = 1, ncol = time, byrow = FALSE)
 
@@ -79,9 +102,8 @@ k<-3
 p<-0.01
 graphWattsStrogatz <- sample_smallworld(dim,n,k,p,FALSE,FALSE)
 plot(graphWattsStrogatz , vertex.size=10, vertex.color="skyblue", edge.color="gray", main="Graphe Watts-Strogatz")
-t <-seq(0,10, by = S1)
 
-VOTEMATRIX_WATTSTROGATS<-Vote_matrix(graphErdosRenyi,epsilon,time)
+VOTEMATRIX_WATTSTROGATS<-Vote_matrix(graphWattsStrogatz,epsilon,time,0)
 #représenter l'évolution du taux de votes pour le candidat 1:
 nbvote2<-matrix(0,nrow = 1, ncol = time, byrow = FALSE)
 
@@ -97,3 +119,12 @@ for (x in 1:time){
 x <- 1:time
 y <- nbvote2;
 plot(x, y, type = "l", col = "blue", lwd = 2, main = "Graphe Watts strogatz evolution du vote 1", xlab = "time", ylab = "votant")
+
+#3
+n <- 100
+m <- 3
+Scalfree <- sample_pa(n, m = m)
+plot(Scalfree , vertex.size=10, vertex.color="skyblue", edge.color="gray", main="Graphe Scale free");
+VOTEMATRIX_SCALEFREE<-Vote_matrix(Scalfree,epsilon,time,1)
+
+
