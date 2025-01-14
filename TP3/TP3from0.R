@@ -19,23 +19,18 @@ Vote_matrix<-function(graphG,epsilon,time,type_of_init){
     }
   }
   else if (type_of_init==1){
-    trois_most_connected<- matrix(0,nrow = 1, ncol = 3, byrow = FALSE)
+    ten_less_connected<- matrix(0,nrow = 1, ncol = 10, byrow = FALSE)
     degres<-degree(graphG)
     for (node in V(graphG)) {
-      if (graphG[node]>trois_most_connected[1,1])
+      for(g in 1:10)
       {
-        trois_most_connected[1,1]<-node
+        if (degres[node] < ten_less_connected[1,g]){
+          ten_less_connected[1,g]<-degres[node]
+        }
       }
-      else if (graphG[node]>trois_most_connected[1,2])
-      {
-        trois_most_connected[1,2]<-node
-      }
-      else if (graphG[node]>trois_most_connected[1,3])
-      {
-        trois_most_connected[1,3]<-node
-      }
-    S}
-      print (trois_most_connected)
+    }
+    print (ten_less_connected)
+
 
   }
 
@@ -54,14 +49,14 @@ Vote_matrix<-function(graphG,epsilon,time,type_of_init){
       }
       p<-(1/nb_voisin)*sommeVoteVoisin
       Pvote <- (1-2*epsilon)*p+epsilon
-- +      if (Pvote >1)
+      if (Pvote >1)
       {
         print("AAAAAAAAAAAHHHHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!!")
       }
       resultat<-rbinom(1, size = 1, prob = Pvote)
       if (is.na(resultat))
       {
-        print("fait chieeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrrrrrrr!!!!!")
+        print("eeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrrrrrrrrrr!!!!!")
       }
 
       VOTEMATRIX[v,t]<-resultat
